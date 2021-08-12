@@ -1,4 +1,4 @@
-# `scraper-lambda`
+# scraper
 
 > TODO: description
 
