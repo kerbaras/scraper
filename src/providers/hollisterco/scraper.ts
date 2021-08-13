@@ -13,12 +13,14 @@ const scraper: Scraper = async (request, page) => {
   await page.goto(request.pageUrl)
 
   const data = await page.evaluate(() => {
-
     let title = document.querySelector('.product-title-main-header')?.textContent?.trim() || ''
     let subtitle = document.querySelector('.short-description')?.textContent?.trim() || ''
 
     // @ts-ignore
-    let currency = document.querySelector('.open-currency-selection-modal span').textContent.split('(')[1].split(')')[0]
+    let currency = document
+      .querySelector('.open-currency-selection-modal span')
+      .textContent.split('(')[1]
+      .split(')')[0]
 
     // @ts-ignore
     let breadcrumbs = document.querySelector('.breadcrumbs ol').innerText.split('\n')
@@ -32,10 +34,10 @@ const scraper: Scraper = async (request, page) => {
 
     let swatch
 
+    let onlyOneAvailable = false
+
     // @ts-ignore
-    let firstSwatch = options[0].swatch
-    // @ts-ignore
-    if (options.find(o => o.swatch !== firstSwatch)) {
+    if (document.querySelector('.product-swatches li').length > 1) {
       swatch = Array.prototype.map.call(
         document.querySelectorAll('.product-swatches input'),
         el => ({
@@ -43,27 +45,28 @@ const scraper: Scraper = async (request, page) => {
         }),
       )
     } else {
+      // @ts-ignore
+      onlyOneAvailable = options.find(o => o.inventoryStatus === 'Available').swatch
       swatch = [
         {
           // @ts-ignore
           productid: Object.keys(productCatalog)[0],
-          swatch: firstSwatch,
-          producturl: null
+          swatch: onlyOneAvailable,
+          producturl: null,
         },
       ]
     }
 
     swatch = swatch.map(sw => {
-
       //@ts-ignore
       let p = productCatalog[sw.productid]
       let kv = p.productAttrsComplex.FiberContent
       let keyValues = {}
 
       // check for .value (str) or .values []
-      if( kv.value ) {
-          let [key, value] = kv.value.split(':')
-          keyValues[key] = value
+      if (kv.value) {
+        let [key, value] = kv.value.split(':')
+        keyValues[key] = value
       } else {
         //@ts-ignore
         for (let pairs of p.productAttrsComplex.FiberContent.values) {
@@ -75,7 +78,9 @@ const scraper: Scraper = async (request, page) => {
       return {
         //@ts-ignore
         ...sw,
-        sizeChartUrls: [`https://www.hollisterco.com/api/ecomm/h-wd/product/sizeguide/${p.sizeChartName}`],
+        sizeChartUrls: [
+          `https://www.hollisterco.com/api/ecomm/h-wd/product/sizeguide/${p.sizeChartName}`,
+        ],
         description: p.longDesc,
         keyValuePairs: keyValues,
         bullets: p.productAttrsComplex.CareInstructions.values.map(o => o.value),
@@ -87,22 +92,29 @@ const scraper: Scraper = async (request, page) => {
           //@ts-ignore
           .map(o => `https://img.hollisterco.com/is/image/anf/${o.id}?policy=product-large`),
       }
-
     })
 
-    options = options.map(op => ({
-      //@ts-ignore
-      ...op,
-      //@ts-ignore
-      ...swatch.find(s => s.swatch === op.swatch),
-    }))
+    options = options
+      .filter((op: any) => !onlyOneAvailable || op.swatch === onlyOneAvailable)
+      .map((op: any) => ({
+        ...op,
+        ...swatch.find(s => s.swatch === op.swatch),
+      }))
 
-    options = options.map(op => ({
+    options = options.map((op: any) => {
       //@ts-ignore
-      ...op,
-      //@ts-ignore
-      ...productPrices[op.productid].items[op.idx],
-    }))
+      let item:any = Object.values(productPrices[op.productid].items)[0]
+      return {
+        ...op,
+        ...item
+      }
+  })
+
+    // options = options.map((op: any) => ({
+    //   ...op,
+    //   //@ts-ignore
+    //   ...Object.values(productPrices[op.productid].items).find(item => item.itemId === op.idx),
+    // }))
 
     return {
       options,
@@ -113,23 +125,16 @@ const scraper: Scraper = async (request, page) => {
     }
   })
 
-
-  data.options = data.options.map(op=>({
-    // @ts-ignore
+  data.options = data.options.map((op: any) => ({
     ...op,
-    // @ts-ignore
-    producturl: ( op.producturl === null ) ? itemGroupUrl : new URL(itemGroupUrl).hostname + op.producturl
+    producturl:
+      op.producturl === null ? itemGroupUrl : new URL(itemGroupUrl).hostname + op.producturl,
   }))
 
-  console.dir(data, { depth: null });
+  console.dir(data, { depth: null })
 
-  const products = data.options.map((v:any) => {
-
-    let p = new Product(
-      `${v.idx}-${v.productid}`,
-      data.title,
-      v.producturl
-    )
+  const products = data.options.map((v: any) => {
+    let p = new Product(`${v.idx}-${v.productid}`, data.title, v.producturl)
 
     p.subTitle = data.subtitle
     p.metadata = {}
@@ -140,9 +145,9 @@ const scraper: Scraper = async (request, page) => {
     p.sku = v.sku
     p.brand = v.brand
     p.size = v.sizePrimary + (v.sizeSecondary ? ` - ${v.sizeSecondary}` : '')
-    p.realPrice = v.offerPrice,
-    p.higherPrice = v.listPrice,
-    p.availability = (v.inventoryStatus === 'Available')
+    p.realPrice = v.offerPrice
+    p.higherPrice = v.listPrice
+    p.availability = v.inventoryStatus === 'Available'
     p.itemGroupId = itemGroupId
     p.color = v.swatch
     p.colorFamily = v.swatchColorFamily
@@ -151,7 +156,6 @@ const scraper: Scraper = async (request, page) => {
     p.sizeChartUrls = v.sizeChartUrls
 
     return p
-
   })
 
   const screenshot = await screenPage(page)
