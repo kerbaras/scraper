@@ -53,11 +53,19 @@ const scraper: Scraper = async (request, page) => {
 
       //@ts-ignore
       let p = productCatalog[sw.productid]
-
+      let kv = p.productAttrsComplex.FiberContent
       let keyValues = {}
-      for (let pairs of p.productAttrsComplex.FiberContent.values) {
-        let [key, value] = pairs.value.split(':')
-        keyValues[key] = value
+
+      // check for .value (str) or .values []
+      if( kv.value ) {
+          let [key, value] = kv.value.split(':')
+          keyValues[key] = value
+      } else {
+        //@ts-ignore
+        for (let pairs of p.productAttrsComplex.FiberContent.values) {
+          let [key, value] = pairs.value.split(':')
+          keyValues[key] = value
+        }
       }
 
       return {
