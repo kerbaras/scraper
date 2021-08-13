@@ -13,8 +13,12 @@ const scraper: Scraper = async (request, page) => {
   await page.goto(request.pageUrl)
 
   const data = await page.evaluate(() => {
+
     let title = document.querySelector('.product-title-main-header')?.textContent?.trim() || ''
     let subtitle = document.querySelector('.short-description')?.textContent?.trim() || ''
+
+    // @ts-ignore
+    let currency = document.querySelector('.open-currency-selection-modal span').textContent.split('(')[1].split(')')[0]
 
     // @ts-ignore
     let breadcrumbs = document.querySelector('.breadcrumbs ol').innerText.split('\n')
@@ -101,10 +105,11 @@ const scraper: Scraper = async (request, page) => {
     }))
 
     return {
+      options,
       title,
       subtitle,
       breadcrumbs,
-      options,
+      currency,
     }
   })
 
