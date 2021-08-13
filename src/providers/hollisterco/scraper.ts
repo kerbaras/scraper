@@ -8,7 +8,7 @@ const scraper: Scraper = async (request, page) => {
   )
 
   let itemGroupUrl = request.pageUrl
-  let itemGroupId = request.pageUrl.split('?')[0].split('-').slice(-1)
+  let itemGroupId = request.pageUrl.split('?')[0].split('-').slice(-1)[0]
 
   await page.goto(request.pageUrl)
 
@@ -123,7 +123,36 @@ const scraper: Scraper = async (request, page) => {
 
   console.dir(data, { depth: null });
 
-  const products = []
+  const products = data.options.map((v:any) => {
+
+    let p = new Product(
+      `${v.idx}-${v.productid}`,
+      data.title,
+      v.producturl
+    )
+
+    p.subTitle = data.subtitle
+    p.metadata = {}
+    p.images = v.images
+    p.videos = []
+    p.description = v.description
+    p.currency = data.currency
+    p.sku = v.sku
+    p.brand = v.brand
+    p.size = v.sizePrimary + (v.sizeSecondary ? ` - ${v.sizeSecondary}` : '')
+    p.realPrice = v.offerPrice,
+    p.higherPrice = v.listPrice,
+    p.availability = (v.inventoryStatus === 'Available')
+    p.itemGroupId = itemGroupId
+    p.color = v.swatch
+    p.colorFamily = v.swatchColorFamily
+    p.bullets = v.bullets
+    p.keyValuePairs = v.keyValuePairs
+    p.sizeChartUrls = v.sizeChartUrls
+
+    return p
+
+  })
 
   const screenshot = await screenPage(page)
 
