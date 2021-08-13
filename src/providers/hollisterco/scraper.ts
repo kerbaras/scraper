@@ -30,7 +30,9 @@ const scraper: Scraper = async (request, page) => {
         idx: el.value,
         ...Object.assign({}, el.dataset),
       }))
-      .slice(1)
+
+    // if more than one option remove the first empty tag
+    options = options.length === 1 ? options : options.slice(1)
 
     let swatch
 
@@ -63,17 +65,22 @@ const scraper: Scraper = async (request, page) => {
       let kv = p.productAttrsComplex.FiberContent
       let keyValues = {}
 
-      // check for .value (str) or .values []
-      if (kv.value) {
-        let [key, value] = kv.value.split(':')
-        keyValues[key] = value
-      } else {
-        //@ts-ignore
-        for (let pairs of p.productAttrsComplex.FiberContent.values) {
-          let [key, value] = pairs.value.split(':')
+      if(kv !== undefined) {
+        // check for .value (str) or .values []
+        if (kv.value) {
+          let [key, value] = kv.value.split(':')
           keyValues[key] = value
+        } else {
+          //@ts-ignore
+          for (let pairs of p.productAttrsComplex.FiberContent.values) {
+            let [key, value] = pairs.value.split(':')
+            keyValues[key] = value
+          }
         }
       }
+
+      let bullets = p.productAttrsComplex.CareInstructions?.values.map(o => o.value)
+      bullets = Array.isArray(bullets) ? bullets : []
 
       return {
         //@ts-ignore
@@ -83,7 +90,7 @@ const scraper: Scraper = async (request, page) => {
         ],
         description: p.longDesc,
         keyValuePairs: keyValues,
-        bullets: p.productAttrsComplex.CareInstructions.values.map(o => o.value),
+        bullets: bullets,
         //@ts-ignore
         images: Object.values(productCatalog[sw.productid].imageSets)
           .flat()
