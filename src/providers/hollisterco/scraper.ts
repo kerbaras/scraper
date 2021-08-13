@@ -24,6 +24,18 @@ const scraper: Scraper = async (request, page) => {
       }),
     )
 
+    swatch = swatch.map(sw => ({
+      //@ts-ignore
+      ...sw,
+      //@ts-ignore
+      images: Object.values(productCatalog[sw.productid].imageSets)
+        .flat()
+        //@ts-ignore
+        .filter(o => o.id)
+        //@ts-ignore
+        .map(o => `https://img.hollisterco.com/is/image/anf/${o.id}?policy=product-large`),
+    }))
+
     let options = Array.prototype.map
       .call(document.querySelectorAll('select[name="sku"] option'), el => ({
         idx: el.value,
@@ -35,14 +47,14 @@ const scraper: Scraper = async (request, page) => {
       //@ts-ignore
       ...op,
       //@ts-ignore
-      ...swatch.find(s=>s.swatch===op.swatch),
+      ...swatch.find(s => s.swatch === op.swatch),
     }))
 
     options = options.map(op => ({
       //@ts-ignore
       ...op,
       //@ts-ignore
-      ...productPrices[op.productid].items[op.idx]
+      ...productPrices[op.productid].items[op.idx],
     }))
 
     // @ts-ignore
@@ -56,7 +68,7 @@ const scraper: Scraper = async (request, page) => {
     }
   })
 
-  console.log(data)
+  console.dir(data, { showHidden: true, depth: null })
   // console.log(data.options);
 
   const products = [new Product('1', data.title, request.pageUrl)]
