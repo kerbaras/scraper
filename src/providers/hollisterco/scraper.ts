@@ -7,11 +7,7 @@ const scraper: Scraper = async (request, page) => {
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.75 Safari/537.36',
   )
 
-  console.log('--->')
-  console.log(request.pageUrl)
-
-  await page.goto(request.pageUrl, { waitUntil: 'networkidle2' })
-  // await page.goto(request.pageUrl)
+  await page.goto(request.pageUrl)
 
   await page.waitForSelector('.product-title-main-header')
   let title = // @ts-ignore
@@ -19,10 +15,9 @@ const scraper: Scraper = async (request, page) => {
 
   const products = [new Product('1', title, request.pageUrl)]
 
-  // const products = [new Product('id', 'title', 'url')]
-
   const screenshot = await screenPage(page)
 
+  // cookies & cache
   const client = await page.target().createCDPSession();
   await client.send('Network.clearBrowserCookies');
   await client.send('Network.clearBrowserCache');
