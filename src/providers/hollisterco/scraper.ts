@@ -35,7 +35,6 @@ const scraper: Scraper = async (request, page) => {
     options = options.length === 1 ? options : options.slice(1)
 
     let swatch
-
     let onlyOneAvailable = false
 
     // @ts-ignore
@@ -116,12 +115,6 @@ const scraper: Scraper = async (request, page) => {
         ...item
       }
   })
-
-    // options = options.map((op: any) => ({
-    //   ...op,
-    //   //@ts-ignore
-    //   ...Object.values(productPrices[op.productid].items).find(item => item.itemId === op.idx),
-    // }))
 
     return {
       options,
