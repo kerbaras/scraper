@@ -7,8 +7,8 @@ const scraper: Scraper = async (request, page) => {
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.75 Safari/537.36',
   )
 
+  let itemGroupUrl = request.pageUrl
   let itemGroupId = request.pageUrl.split('?')[0].split('-').slice(-1)
-  console.log({ itemGroupId })
 
   await page.goto(request.pageUrl)
   await page.waitForSelector('.product-title-main-header')
@@ -17,6 +17,11 @@ const scraper: Scraper = async (request, page) => {
     let title = document.querySelector('.product-title-main-header')?.textContent?.trim() || ''
     let subtitle = document.querySelector('.short-description')?.textContent?.trim() || ''
 
+    // @ts-ignore
+    let breadcrumbs = document.querySelector('.breadcrumbs ol').innerText.split('\n')
+
+    // @ts-ignore
+    let sizeChartHTML = document.querySelector('.size-guide-info-wrapper').innerHTML
 
     let options = Array.prototype.map
       .call(document.querySelectorAll('select[name="sku"] option'), el => ({
@@ -25,41 +30,56 @@ const scraper: Scraper = async (request, page) => {
       }))
       .slice(1)
 
-    let swatch;
+    let swatch
 
     // @ts-ignore
     let firstSwatch = options[0].swatch
     // @ts-ignore
-    if ( options.find(o=>o.swatch!==firstSwatch) ) {
-
+    if (options.find(o => o.swatch !== firstSwatch)) {
       swatch = Array.prototype.map.call(
         document.querySelectorAll('.product-swatches input'),
         el => ({
           ...Object.assign({}, el.dataset),
         }),
       )
-
     } else {
-
-      swatch = [{
-        // @ts-ignore
-        productid: Object.keys(productCatalog)[0],
-        swatch: firstSwatch
-      }]
-
+      swatch = [
+        {
+          // @ts-ignore
+          productid: Object.keys(productCatalog)[0],
+          swatch: firstSwatch,
+          producturl: null
+        },
+      ]
     }
 
-    swatch = swatch.map(sw => ({
+    swatch = swatch.map(sw => {
+
       //@ts-ignore
-      ...sw,
-      //@ts-ignore
-      images: Object.values(productCatalog[sw.productid].imageSets)
-        .flat()
+      let p = productCatalog[sw.productid]
+
+      let keyValues = {}
+      for (let pairs of p.productAttrsComplex.FiberContent.values) {
+        let [key, value] = pairs.value.split(':')
+        keyValues[key] = value
+      }
+
+      return {
         //@ts-ignore
-        .filter(o => o.id)
+        ...sw,
+        description: p.longDesc,
+        keyValuePairs: keyValues,
+        bullets: p.productAttrsComplex.CareInstructions.values.map(o => o.value),
         //@ts-ignore
-        .map(o => `https://img.hollisterco.com/is/image/anf/${o.id}?policy=product-large`),
-    }))
+        images: Object.values(productCatalog[sw.productid].imageSets)
+          .flat()
+          //@ts-ignore
+          .filter(o => o.id)
+          //@ts-ignore
+          .map(o => `https://img.hollisterco.com/is/image/anf/${o.id}?policy=product-large`),
+      }
+
+    })
 
     options = options.map(op => ({
       //@ts-ignore
@@ -75,19 +95,20 @@ const scraper: Scraper = async (request, page) => {
       ...productPrices[op.productid].items[op.idx],
     }))
 
-    // @ts-ignore
-    let breadcrumbs = document.querySelector('.breadcrumbs ol').innerText.split('\n')
-
     return {
       title,
       subtitle,
       breadcrumbs,
+      sizeChartHTML,
       options,
     }
   })
 
-  console.dir(data, { showHidden: true, depth: null })
-  // console.log(data.options);
+  data.options = data.options.map(op=>(
+    // @ts-ignore
+    ( op.producturl === null ) ? itemGroupUrl : op.producturl
+  ))
+
 
   const products = [new Product('1', 'asd', request.pageUrl)]
 
