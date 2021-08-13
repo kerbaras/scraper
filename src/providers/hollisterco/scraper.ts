@@ -17,12 +17,37 @@ const scraper: Scraper = async (request, page) => {
     let title = document.querySelector('.product-title-main-header')?.textContent?.trim() || ''
     let subtitle = document.querySelector('.short-description')?.textContent?.trim() || ''
 
-    let swatch = Array.prototype.map.call(
-      document.querySelectorAll('.product-swatches input'),
-      el => ({
+
+    let options = Array.prototype.map
+      .call(document.querySelectorAll('select[name="sku"] option'), el => ({
+        idx: el.value,
         ...Object.assign({}, el.dataset),
-      }),
-    )
+      }))
+      .slice(1)
+
+    let swatch;
+
+    // @ts-ignore
+    let firstSwatch = options[0].swatch
+    // @ts-ignore
+    if ( options.find(o=>o.swatch!==firstSwatch) ) {
+
+      swatch = Array.prototype.map.call(
+        document.querySelectorAll('.product-swatches input'),
+        el => ({
+          ...Object.assign({}, el.dataset),
+        }),
+      )
+
+    } else {
+
+      swatch = [{
+        // @ts-ignore
+        productid: Object.keys(productCatalog)[0],
+        swatch: firstSwatch
+      }]
+
+    }
 
     swatch = swatch.map(sw => ({
       //@ts-ignore
@@ -35,13 +60,6 @@ const scraper: Scraper = async (request, page) => {
         //@ts-ignore
         .map(o => `https://img.hollisterco.com/is/image/anf/${o.id}?policy=product-large`),
     }))
-
-    let options = Array.prototype.map
-      .call(document.querySelectorAll('select[name="sku"] option'), el => ({
-        idx: el.value,
-        ...Object.assign({}, el.dataset),
-      }))
-      .slice(1)
 
     options = options.map(op => ({
       //@ts-ignore
@@ -71,7 +89,7 @@ const scraper: Scraper = async (request, page) => {
   console.dir(data, { showHidden: true, depth: null })
   // console.log(data.options);
 
-  const products = [new Product('1', data.title, request.pageUrl)]
+  const products = [new Product('1', 'asd', request.pageUrl)]
 
   const screenshot = await screenPage(page)
 
