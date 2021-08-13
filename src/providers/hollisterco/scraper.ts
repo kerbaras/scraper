@@ -11,7 +11,6 @@ const scraper: Scraper = async (request, page) => {
   let itemGroupId = request.pageUrl.split('?')[0].split('-').slice(-1)
 
   await page.goto(request.pageUrl)
-  await page.waitForSelector('.product-title-main-header')
 
   const data = await page.evaluate(() => {
     let title = document.querySelector('.product-title-main-header')?.textContent?.trim() || ''
@@ -19,9 +18,6 @@ const scraper: Scraper = async (request, page) => {
 
     // @ts-ignore
     let breadcrumbs = document.querySelector('.breadcrumbs ol').innerText.split('\n')
-
-    // @ts-ignore
-    let sizeChartHTML = document.querySelector('.size-guide').innerHTML
 
     let options = Array.prototype.map
       .call(document.querySelectorAll('select[name="sku"] option'), el => ({
@@ -67,6 +63,7 @@ const scraper: Scraper = async (request, page) => {
       return {
         //@ts-ignore
         ...sw,
+        sizeChartUrls: [`https://www.hollisterco.com/api/ecomm/h-wd/product/sizeguide/${p.sizeChartName}`],
         description: p.longDesc,
         keyValuePairs: keyValues,
         bullets: p.productAttrsComplex.CareInstructions.values.map(o => o.value),
@@ -100,7 +97,6 @@ const scraper: Scraper = async (request, page) => {
       subtitle,
       breadcrumbs,
       options,
-      sizeChartHTML,
     }
   })
 
