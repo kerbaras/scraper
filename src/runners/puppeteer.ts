@@ -7,7 +7,7 @@ import IReport from '../interfaces/report'
 import IScrapeRequest from '../interfaces/request'
 import { IRunner } from '../interfaces/runner'
 
-const { HEADLESS = true, DEVTOOLS = false } = process.env
+const { HEADLESS = false, DEVTOOLS = false } = process.env
 
 const getPuppeteer = async (): Promise<Browser> => {
   const opts = {
