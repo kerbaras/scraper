@@ -118,12 +118,12 @@ const scraper: Scraper = async (request, page) => {
     // @ts-ignore
     ...op,
     // @ts-ignore
-    producturl: ( op.producturl === null ) ? itemGroupUrl : op.producturl
+    producturl: ( op.producturl === null ) ? itemGroupUrl : new URL(itemGroupUrl).hostname + op.producturl
   }))
 
   console.dir(data, { depth: null });
 
-  const products = [new Product('1', 'asd', request.pageUrl)]
+  const products = []
 
   const screenshot = await screenPage(page)
 
