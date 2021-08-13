@@ -29,10 +29,6 @@ HEADLESS=true
 3. Register your scraper by adding `export * as {name} from './{name}'` at `src/providers/index.ts`
 4. Run your scraper! :)
 
-## Creating new scrapers:
-
-Simply run `yarn generate name` and check the file `src/providers/name/scraper.ts`
-
 ## Environment Variables
 
 The Scraper uses the following environment variables:
