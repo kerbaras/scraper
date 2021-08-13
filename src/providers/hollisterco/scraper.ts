@@ -23,6 +23,10 @@ const scraper: Scraper = async (request, page) => {
 
   const screenshot = await screenPage(page)
 
+  const client = await page.target().createCDPSession();
+  await client.send('Network.clearBrowserCookies');
+  await client.send('Network.clearBrowserCache');
+
   return {
     screenshot,
     products,
