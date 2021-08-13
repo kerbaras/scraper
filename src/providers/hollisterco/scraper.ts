@@ -21,7 +21,7 @@ const scraper: Scraper = async (request, page) => {
     let breadcrumbs = document.querySelector('.breadcrumbs ol').innerText.split('\n')
 
     // @ts-ignore
-    let sizeChartHTML = document.querySelector('.size-guide-info-wrapper').innerHTML
+    let sizeChartHTML = document.querySelector('.size-guide').innerHTML
 
     let options = Array.prototype.map
       .call(document.querySelectorAll('select[name="sku"] option'), el => ({
@@ -99,16 +99,20 @@ const scraper: Scraper = async (request, page) => {
       title,
       subtitle,
       breadcrumbs,
-      sizeChartHTML,
       options,
+      sizeChartHTML,
     }
   })
 
-  data.options = data.options.map(op=>(
-    // @ts-ignore
-    ( op.producturl === null ) ? itemGroupUrl : op.producturl
-  ))
 
+  data.options = data.options.map(op=>({
+    // @ts-ignore
+    ...op,
+    // @ts-ignore
+    producturl: ( op.producturl === null ) ? itemGroupUrl : op.producturl
+  }))
+
+  console.dir(data, { depth: null });
 
   const products = [new Product('1', 'asd', request.pageUrl)]
 
